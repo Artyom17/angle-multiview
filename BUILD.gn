@@ -332,6 +332,10 @@ static_library("translator") {
     # For some reason this warning doesn't get triggered in Chromium
     cflags = [ "/wd4718" ]
   }
+  if (is_debug) { #!AB
+    configs -= [ "//build/config/compiler:default_symbols" ]
+    configs += [ "//build/config/compiler:symbols" ]
+  }
 }
 
 source_set("translator_fuzzer") {
@@ -513,6 +517,10 @@ static_library("libANGLE") {
         "android",
         "log",
       ]
+  if (is_debug) { #!AB
+    configs -= [ "//build/config/compiler:default_symbols" ]
+    configs += [ "//build/config/compiler:symbols" ]
+  }
     }
     if (ozone_platform_gbm) {
       configs += [ ":libdrm" ]
