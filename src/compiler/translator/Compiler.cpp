@@ -480,7 +480,7 @@ bool TCompiler::checkAndSimplifyAST(TIntermBlock *root,
     }
 
     if ((compileOptions & SH_INITIALIZE_BUILTINS_FOR_INSTANCED_MULTIVIEW) &&
-        parseContext.isExtensionEnabled(TExtension::OVR_multiview) &&
+        (parseContext.isExtensionEnabled(TExtension::OVR_multiview) || parseContext.isExtensionEnabled(TExtension::OVR_multiview2)) && //!AB, Mozilla compat
         getShaderType() != GL_COMPUTE_SHADER)
     {
         DeclareAndInitBuiltinsForInstancedMultiview(root, mNumViews, shaderType, compileOptions,

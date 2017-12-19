@@ -863,6 +863,16 @@ void IdentifyBuiltIns(sh::GLenum type,
         // 1.00. This is specified in the WEBGL_multiview spec.
         symbolTable.insertVariableExt(ESSL1_BUILTINS, TExtension::OVR_multiview, "gl_ViewID_OVR",
                                       TType(EbtInt, EbpHigh, EvqViewIDOVR, 1));
+
+        //!AB,  Mozilla compat
+        symbolTable.insertVariableExt(ESSL3_BUILTINS, TExtension::OVR_multiview2, "gl_ViewID_OVR",
+                                      TType(EbtUInt, EbpHigh, EvqViewIDOVR, 1));
+
+        //!AB,  Mozilla compat
+        // ESSL 1.00 doesn't have unsigned integers, so gl_ViewID_OVR is a signed integer in ESSL
+        // 1.00. This is specified in the WEBGL_multiview spec.
+        symbolTable.insertVariableExt(ESSL1_BUILTINS, TExtension::OVR_multiview2, "gl_ViewID_OVR",
+                                      TType(EbtInt, EbpHigh, EvqViewIDOVR, 1));
     }
 
     switch (type)
@@ -1083,6 +1093,7 @@ void InitExtensionBehavior(const ShBuiltInResources &resources, TExtensionBehavi
     if (resources.OVR_multiview)
     {
         extBehavior[TExtension::OVR_multiview] = EBhUndefined;
+        extBehavior[TExtension::OVR_multiview2] = EBhUndefined;//!AB, for Mozilla compat
     }
     if (resources.EXT_YUV_target)
     {

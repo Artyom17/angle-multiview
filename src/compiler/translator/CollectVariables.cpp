@@ -521,7 +521,8 @@ void CollectVariablesTraverser::visitSymbol(TIntermSymbol *symbol)
                 else
                 {
                     ASSERT(mShaderType == GL_VERTEX_SHADER &&
-                           IsExtensionEnabled(mExtensionBehavior, TExtension::OVR_multiview));
+                           (IsExtensionEnabled(mExtensionBehavior, TExtension::OVR_multiview) 
+                            || IsExtensionEnabled(mExtensionBehavior, TExtension::OVR_multiview2)));  //!AB Mozilla compat
                 }
                 break;
             default:

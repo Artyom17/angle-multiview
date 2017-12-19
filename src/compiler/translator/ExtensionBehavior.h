@@ -32,7 +32,8 @@ enum class TExtension
     OES_EGL_image_external_essl3,
     OES_geometry_shader,
     OES_standard_derivatives,
-    OVR_multiview
+    OVR_multiview,
+    OVR_multiview2 //!AB, OVR_multiview2 for Mozilla compat
 };
 
 enum TBehavior
