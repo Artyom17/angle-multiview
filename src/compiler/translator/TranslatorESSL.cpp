@@ -36,6 +36,14 @@ void TranslatorESSL::translate(TIntermBlock *root,
     TInfoSinkBase &sink = getInfoSink().obj;
 
     int shaderVer = getShaderVersion();
+    if (shaderVer >= 300) 
+    {
+        compileOptions &= ~SH_ENFORCE_OUTPUT_TO_ESSL3;
+    } else if (shaderVer < 300 && ((compileOptions & SH_ENFORCE_OUTPUT_TO_ESSL3) || isMultiviewExtensionNeeded())) 
+    {
+        shaderVer = 300;
+        compileOptions |= SH_ENFORCE_OUTPUT_TO_ESSL3;
+    }
     if (shaderVer > 100)
     {
         sink << "#version " << shaderVer << " es\n";
@@ -99,6 +107,46 @@ void TranslatorESSL::translate(TIntermBlock *root,
             getGeometryShaderOutputPrimitiveType(), getGeometryShaderMaxVertices());
     }
 
+    // Declare gl_FragColor and glFragData as webgl_FragColor and webgl_FragData
+    // if it's core profile shaders and they are used.
+    if (getShaderType() == GL_FRAGMENT_SHADER && (compileOptions & SH_ENFORCE_OUTPUT_TO_ESSL3))
+    {
+        bool hasGLFragColor = false;
+        bool hasGLFragData  = false;
+
+        for (const auto &outputVar : outputVariables)
+        {
+            if (outputVar.name == "gl_FragColor")
+            {
+                ASSERT(!hasGLFragColor);
+                hasGLFragColor = true;
+                continue;
+            }
+            else if (outputVar.name == "gl_FragData")
+            {
+                ASSERT(!hasGLFragData);
+                hasGLFragData = true;
+                continue;
+            }
+        }
+        ASSERT(!(hasGLFragColor && hasGLFragData));
+
+        TPrecision defPrecision = getSymbolTable().getDefaultPrecision(EbtFloat);
+        if (defPrecision == EbpUndefined)
+        {
+            defPrecision = EbpMedium;
+        }
+        const char *precStr = sh::getPrecisionString(defPrecision);
+        if (hasGLFragColor)
+        {
+            sink << "out " << precStr << " vec4 webgl_FragColor;\n";
+        }
+        if (hasGLFragData) //???
+        {
+            sink << "out " << precStr << " vec4 webgl_FragData[gl_MaxDrawBuffers];\n";
+        }
+    }
+
     // Write translated shader.
     TOutputESSL outputESSL(sink, getArrayIndexClampingStrategy(), getHashFunction(), getNameMap(),
                            &getSymbolTable(), getShaderType(), shaderVer, precisionEmulation,
@@ -147,30 +195,34 @@ void TranslatorESSL::writeExtensionBehavior(ShCompileOptions compileOptions)
             }
             else if (isMultiview)
             {
-                // Emit the OVR_multiview extension
-//                sink << "#extension " << GetExtensionNameString(iter->first) << " : " << GetBehaviorString(iter->second)
-//                     << "\n";
-                sink << "#extension GL_OVR_multiview2 : " << GetBehaviorString(iter->second)
-                     << "\n";
-
-                if (getShaderType() == GL_VERTEX_SHADER)
+                if (isMultiviewExtEmulated && getShaderType() == GL_VERTEX_SHADER &&
+                    (compileOptions & SH_SELECT_VIEW_IN_NV_GLSL_VERTEX_SHADER) != 0u)
                 {
                     // Emit the NV_viewport_array2 extension in a vertex shader if the
                     // SH_SELECT_VIEW_IN_NV_GLSL_VERTEX_SHADER option is set and the
                     // OVR_multiview(2) extension is requested.
-                    if (isMultiviewExtEmulated && (compileOptions & SH_SELECT_VIEW_IN_NV_GLSL_VERTEX_SHADER) != 0u)
-                    {
-                        sink << "#extension GL_NV_viewport_array2 : require\n";
-                    }
+                    sink << "#extension GL_NV_viewport_array2 : require\n";
+                }
+                //!AB begin
+                else if (getShaderType() == GL_VERTEX_SHADER)
+                {
+                    sink << "#extension GL_OVR_multiview2 : " << GetBehaviorString(iter->second)
+                         << "\n";
 
                     // Vertex shaders allows the num_views layout qualifier.
                     // If this qualifier is not declared, the behavior is as if it had been set to 1.
-                    if (getNumViews() >= 2)
+                    int numViews = getNumViews();
+                    if (compileOptions & SH_ENFORCE_OUTPUT_TO_ESSL3)
                     {
-                        sink << "layout(num_views=" << getNumViews() << ") in;"
+                        numViews = 2; //? How can we specify numViews in WebGL 1?
+                    }
+                    if (numViews >= 2)
+                    {
+                        sink << "layout(num_views=" << numViews << ") in;"
                              << "\n"; 
                     }
                 }
+                //!AB end
             }
             else if (iter->first == TExtension::EXT_geometry_shader)
             {
@@ -195,6 +247,22 @@ void TranslatorESSL::writeExtensionBehavior(ShCompileOptions compileOptions)
             }
         }
     }
+}
+
+bool TranslatorESSL::isMultiviewExtensionNeeded() const {
+    const TExtensionBehavior &extBehavior = getExtensionBehavior();
+    for (TExtensionBehavior::const_iterator iter = extBehavior.begin(); iter != extBehavior.end();
+         ++iter)
+    {
+        if (iter->second != EBhUndefined)
+        {
+            const bool isMultiview = (iter->first == TExtension::OVR_multiview);
+            if (isMultiview) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 }  // namespace sh

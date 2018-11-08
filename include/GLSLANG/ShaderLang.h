@@ -261,6 +261,10 @@ const ShCompileOptions SH_SKIP_D3D_CONSTANT_REGISTER_ZERO = UINT64_C(1) << 37;
 // Clamp gl_FragDepth to the range [0.0, 1.0] in case it is statically used.
 const ShCompileOptions SH_CLAMP_FRAG_DEPTH = UINT64_C(1) << 38;
 
+// If the flag is enabled, shaders will be forcedly compiled into ESSL3. Required for 
+// multiview support in WebGL 1
+const ShCompileOptions SH_ENFORCE_OUTPUT_TO_ESSL3 = UINT64_C(1) << 63;
+
 // Defines alternate strategies for implementing array index clamping.
 enum ShArrayIndexClampingStrategy
 {

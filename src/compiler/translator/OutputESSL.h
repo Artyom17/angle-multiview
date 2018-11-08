@@ -27,6 +27,8 @@ class TOutputESSL : public TOutputGLSLBase
 
   protected:
     bool writeVariablePrecision(TPrecision precision) override;
+    void visitSymbol(TIntermSymbol *node) override;
+    ImmutableString translateTextureFunction(const ImmutableString &name) override;
 
   private:
     bool mForceHighp;

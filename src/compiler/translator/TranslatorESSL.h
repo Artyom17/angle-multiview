@@ -28,6 +28,7 @@ class TranslatorESSL : public TCompiler
 
   private:
     void writeExtensionBehavior(ShCompileOptions compileOptions);
+    bool isMultiviewExtensionNeeded() const;
 };
 
 }  // namespace sh

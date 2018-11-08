@@ -233,7 +233,7 @@ const char *TOutputGLSLBase::mapQualifierToString(TQualifier qualifier)
                 break;
         }
     }
-    if (sh::IsGLSL130OrNewer(mOutput))
+    if (sh::IsGLSL130OrNewer(mOutput) || (mCompileOptions & SH_ENFORCE_OUTPUT_TO_ESSL3))
     {
         switch (qualifier)
         {
